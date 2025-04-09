@@ -3,6 +3,7 @@
 
 ### macOS ###
 # General
+.git
 .DS_Store
 .AppleDouble
 .LSOverride
