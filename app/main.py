@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.api.broker import router as broker_router
 from app.api.chat import router as chat_router
 
 app = FastAPI(
@@ -17,6 +18,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Include routers
 app.include_router(chat_router, tags=["chat"])
+app.include_router(broker_router, tags=["agents"])
 
 
 # Serve index.html at root
