@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 # ---------- Pydantic Model ----------
-class AgentRegistration(BaseModel):
+class RegistrationAgent(BaseModel):
     """Agent registration model."""
 
     name: str = Field(..., example="TaxExpert")

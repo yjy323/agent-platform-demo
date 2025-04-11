@@ -2,17 +2,18 @@ from datetime import datetime
 from typing import Dict, List
 
 
-# ---------- In-Memory Registry ----------
-class AgentRegistry:
+class AgentBroker:
     def __init__(self) -> None:
         self.agents: Dict[str, Dict] = {}
 
     def register(self, agent_data: Dict) -> None:
+        """In-memory registry for agents."""
         name = agent_data["name"]
         if name in self.agents:
             raise ValueError(f"Agent '{name}' already exists.")
 
         self.agents[name] = {
+            "name": agent_data["name"],
             "endpoint": agent_data["endpoint"],
             "description": agent_data["description"],
             "skills": agent_data["skills"],
