@@ -3,8 +3,13 @@ from typing import Dict, List
 
 
 class AgentBroker:
-    def __init__(self) -> None:
-        self.agents: Dict[str, Dict] = {}
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.agents: Dict[str, Dict] = {}
+        return cls._instance
 
     def register(self, agent_data: Dict) -> None:
         """In-memory registry for agents."""
@@ -13,7 +18,7 @@ class AgentBroker:
             raise ValueError(f"Agent '{name}' already exists.")
 
         self.agents[name] = {
-            "name": agent_data["name"],
+            "name": name,
             "endpoint": agent_data["endpoint"],
             "description": agent_data["description"],
             "skills": agent_data["skills"],

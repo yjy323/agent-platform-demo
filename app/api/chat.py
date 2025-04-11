@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.agents import GeneralAssistantAgent, LLMOrchestrator, TaxExpertAgent
+from app.agents.broker import AgentBroker
 from app.schemas.chat import ChatRequest, ChatResponse
 
 router = APIRouter()
@@ -12,8 +13,9 @@ tax_agent = TaxExpertAgent()
 general_agent = GeneralAssistantAgent()
 agents = [tax_agent, general_agent]
 
-# Initialize the orchestrator
-orchestrator = LLMOrchestrator(agents)
+# Initialize the broker and orchestrator
+broker = AgentBroker()
+orchestrator = LLMOrchestrator(broker)
 
 
 @router.post("/chat", response_model=ChatResponse)  # type: ignore[misc]
