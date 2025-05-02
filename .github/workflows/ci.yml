@@ -22,44 +22,20 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install black isort flake8 mypy
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install black==24.3.0 isort==5.13.2 flake8==7.0.0 mypy==1.9.0
+        if [ -f ci_test_app/requirements.txt ]; then pip install -r ci_test_app/requirements.txt; fi
 
     - name: Lint with black
-      run: |
-        python_files=$(find . -name "*.py" -not -path "./agents/*" -type f | tr '\n' ' ')
-        if [ -n "$python_files" ]; then
-          black --check $python_files
-        else
-          echo "No Python files to check with black"
-        fi
+      run: black --check ci_test_app
 
     - name: Lint with isort
-      run: |
-        python_files=$(find . -name "*.py" -not -path "./agents/*" -type f | tr '\n' ' ')
-        if [ -n "$python_files" ]; then
-          isort --check $python_files
-        else
-          echo "No Python files to check with isort"
-        fi
+      run: isort --check ci_test_app
 
     - name: Lint with flake8
-      run: |
-        python_files=$(find . -name "*.py" -not -path "./agents/*" -type f | tr '\n' ' ')
-        if [ -n "$python_files" ]; then
-          flake8 $python_files
-        else
-          echo "No Python files to check with flake8"
-        fi
+      run: flake8 ci_test_app
 
     - name: Type check with mypy
-      run: |
-        python_files=$(find . -name "*.py" -not -path "./agents/*" -type f | tr '\n' ' ')
-        if [ -n "$python_files" ]; then
-          mypy $python_files
-        else
-          echo "No Python files to check with mypy"
-        fi
+      run: mypy ci_test_app
 
   test:
     name: Test
@@ -78,7 +54,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pytest pytest-cov
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f ci_test_app/requirements.txt ]; then pip install -r ci_test_app/requirements.txt; fi
 
     - name: Test ci_test_app
       run: python -m pytest ci_test_app/tests --cov=ci_test_app --cov-report=term --cov-report=xml:ci_test_app-coverage.xml
