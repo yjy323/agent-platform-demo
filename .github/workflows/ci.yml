@@ -63,13 +63,13 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         files: ./ci_test_app-coverage.xml
-        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false
 
   build-and-push:
     name: Build and Push Docker Images
-    needs: test  # 테스트 작업이 성공해야 빌드 실행
+    needs: test
     runs-on: ubuntu-latest
-    # Only run on push to main or develop, not on PRs
     if: github.event_name == 'push'
 
     steps:
