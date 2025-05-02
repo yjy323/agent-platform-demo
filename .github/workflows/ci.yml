@@ -57,12 +57,12 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Test agent_discovery
-      run: python -m pytest agent_discovery/tests --cov=agent_discovery --cov-report=term --cov-report=xml:agent_discovery-coverage.xml
+      run: python -m pytest ci_test_app/tests --cov=ci_test_app --cov-report=term --cov-report=xml:ci_test_app-coverage.xml
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
       with:
-        files: ./agent_discovery-coverage.xml
+        files: ./ci_test_app-coverage.xml
         fail_ci_if_error: true
 
   build-and-push:
@@ -87,6 +87,6 @@ jobs:
     - name: Build and push agent_discovery
       uses: docker/build-push-action@v4
       with:
-        context: ./agent_discovery
+        context: ./ci_test_app
         push: true
-        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/agent_discovery:latest,${{ secrets.DOCKER_HUB_USERNAME }}/agent_discovery:${{ github.sha }}
+        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/ci_test_app:latest,${{ secrets.DOCKER_HUB_USERNAME }}/ci_test_app:${{ github.sha }}
