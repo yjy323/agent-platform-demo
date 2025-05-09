@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 from agents.common.types import (
     AgentAuthentication,
@@ -31,17 +31,29 @@ class AgentServiceMeta(BaseModel):
     skills: List[AgentSkill] = Field(default_factory=list)
 
 
+class AddressValue(BaseModel):
+    value: str = Field(..., min_length=1, max_length=255)
+
+
+class PortValue(BaseModel):
+    value: int = Field(..., ge=1, le=65535)
+
+
+class DurationValue(BaseModel):
+    value: str = Field(..., pattern=r"^\d+(ms|s|m|h)$")
+
+
 class CheckConfig(BaseModel):
-    HTTP: str = Field(...)
-    Interval: str = Field(...)
-    Timeout: str = Field(...)
+    HTTP: HttpUrl = Field(...)
+    Interval: DurationValue = Field(...)
+    Timeout: DurationValue = Field(...)
 
 
 class ConsulServiceDefinition(BaseModel):
     Name: str = Field(...)
     ID: str = Field(...)
-    Address: str = Field(...)
-    Port: int = Field(..., ge=1, le=65535)
+    Address: AddressValue = Field(...)
+    Port: PortValue = Field(...)
     Tags: List[str] = Field(default_factory=list)
     Meta: AgentServiceMeta = Field(...)
     Check: Optional[CheckConfig] = Field(None)
@@ -54,8 +66,8 @@ class ServiceDeregistration(BaseModel):
 class ServiceEntry(BaseModel):
     ID: str = Field(...)
     Service: str = Field(...)
-    Address: str = Field(...)
-    Port: int = Field(...)
+    Address: AddressValue = Field(...)
+    Port: PortValue = Field(...)
     Tags: List[str] = Field(default_factory=list)
     Meta: AgentServiceMeta = Field(...)
 
