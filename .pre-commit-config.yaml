@@ -31,4 +31,4 @@ repos:
     rev: v1.9.0
     hooks:
     -   id: mypy
-        exclude: ^tests/
+        exclude: (^|/)tests/

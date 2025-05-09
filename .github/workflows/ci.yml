@@ -23,19 +23,19 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install black==24.3.0 isort==5.13.2 flake8==7.0.0 mypy==1.9.0
-        if [ -f ci_test_app/requirements.txt ]; then pip install -r ci_test_app/requirements.txt; fi
+        if [ -f agent_discovery/requirements.txt ]; then pip install -r agent_discovery/requirements.txt; fi
 
     - name: Lint with black
-      run: black --check ci_test_app
+      run: black --check agent_discovery
 
     - name: Lint with isort
-      run: isort --check ci_test_app
+      run: isort --check agent_discovery
 
     - name: Lint with flake8
-      run: flake8 ci_test_app
+      run: flake8 agent_discovery
 
     - name: Type check with mypy
-      run: mypy ci_test_app
+      run: PYTHONPATH=. mypy --exclude 'agent_discovery/tests/' agent_discovery
 
   test:
     name: Test
@@ -54,15 +54,15 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pytest pytest-cov
-        if [ -f ci_test_app/requirements.txt ]; then pip install -r ci_test_app/requirements.txt; fi
+        if [ -f agent_discovery/requirements.txt ]; then pip install -r agent_discovery/requirements.txt; fi
 
-    - name: Test ci_test_app
-      run: python -m pytest ci_test_app/tests --cov=ci_test_app --cov-report=term --cov-report=xml:ci_test_app-coverage.xml
+    - name: Test agent_discovery
+      run: python -m pytest agent_discovery/tests --cov=agent_discovery --cov-report=term --cov-report=xml:agent_discovery-coverage.xml
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
       with:
-        files: ./ci_test_app-coverage.xml
+        files: ./agent_discovery-coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: false
 
@@ -84,9 +84,9 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Build and push ci_test_app
+    - name: Build and push agent_discovery
       uses: docker/build-push-action@v4
       with:
-        context: ./ci_test_app
+        context: ./agent_discovery
         push: true
-        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/ci_test_app:latest,${{ secrets.DOCKER_HUB_USERNAME }}/ci_test_app:${{ github.sha }}
+        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/agent_discovery:latest,${{ secrets.DOCKER_HUB_USERNAME }}/agent_discovery:${{ github.sha }}
