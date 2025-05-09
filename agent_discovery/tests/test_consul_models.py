@@ -157,7 +157,11 @@ def test_service_entry_invalid_port(valid_provider, valid_capabilities):
     meta = AgentServiceMeta(provider=valid_provider, capabilities=valid_capabilities)
     with pytest.raises(ValidationError):
         ServiceEntry(
-            ID="e1", Service="svc", Address=AddressValue(value="h"), Port=-1, Meta=meta
+            ID="e1",
+            Service="svc",
+            Address=AddressValue(value="host"),
+            Port=-1,
+            Meta=meta,
         )
 
 
