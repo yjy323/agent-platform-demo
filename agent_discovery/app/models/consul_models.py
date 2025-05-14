@@ -1,14 +1,7 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
-from pydantic import BaseModel, Field, HttpUrl
-
-from agents.common.types import (
-    AgentAuthentication,
-    AgentCapabilities,
-    AgentProvider,
-    AgentSkill,
-)
+from pydantic import BaseModel, Field, HttpUrl, RootModel
 
 
 class HealthStatus(str, Enum):
@@ -18,29 +11,16 @@ class HealthStatus(str, Enum):
     maintenance = "maintenance"
 
 
-class AgentServiceMeta(BaseModel):
-    provider: AgentProvider = Field(...)
-    modalities: List[str] = Field(default_factory=list)
-    version: Optional[str] = Field(None)
-    description: Optional[str] = Field(None)
-    documentation_url: Optional[str] = Field(None)
-    capabilities: AgentCapabilities = Field(...)
-    authentication: Optional[AgentAuthentication] = Field(None)
-    default_input_modes: List[str] = Field(default_factory=list)
-    default_output_modes: List[str] = Field(default_factory=list)
-    skills: List[AgentSkill] = Field(default_factory=list)
+class AddressValue(RootModel[Annotated[str, Field(min_length=1, max_length=255)]]):
+    pass
 
 
-class AddressValue(BaseModel):
-    value: str = Field(..., min_length=1, max_length=255)
+class PortValue(RootModel[Annotated[int, Field(ge=1, le=65535)]]):
+    pass
 
 
-class PortValue(BaseModel):
-    value: int = Field(..., ge=1, le=65535)
-
-
-class DurationValue(BaseModel):
-    value: str = Field(..., pattern=r"^\d+(ms|s|m|h)$")
+class DurationValue(RootModel[Annotated[str, Field(pattern=r"^\d+(ms|s|m|h)$")]]):
+    pass
 
 
 class CheckConfig(BaseModel):
@@ -55,7 +35,7 @@ class ConsulServiceDefinition(BaseModel):
     Address: AddressValue = Field(...)
     Port: PortValue = Field(...)
     Tags: List[str] = Field(default_factory=list)
-    Meta: AgentServiceMeta = Field(...)
+    Meta: dict[str, str] = Field(...)
     Check: Optional[CheckConfig] = Field(None)
 
 
@@ -69,7 +49,7 @@ class ServiceEntry(BaseModel):
     Address: AddressValue = Field(...)
     Port: PortValue = Field(...)
     Tags: List[str] = Field(default_factory=list)
-    Meta: AgentServiceMeta = Field(...)
+    Meta: dict[str, str] = Field(...)
 
 
 class HealthCheckResult(BaseModel):
