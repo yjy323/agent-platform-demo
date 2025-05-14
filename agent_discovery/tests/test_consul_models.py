@@ -3,7 +3,6 @@ from pydantic import ValidationError
 
 from agent_discovery.app.models.consul_models import (
     AddressValue,
-    AgentServiceMeta,
     CheckConfig,
     ConsulServiceDefinition,
     DurationValue,
@@ -14,37 +13,22 @@ from agent_discovery.app.models.consul_models import (
     ServiceDeregistration,
     ServiceEntry,
 )
-from agents.common.types import (
-    AgentAuthentication,
-    AgentCapabilities,
-    AgentProvider,
-    AgentSkill,
-)
 
 
-# --- Fixtures for nested models ---
+# --- Fixtures for common values ---
 @pytest.fixture
-def valid_provider():
-    return AgentProvider(organization="TestOrg", url="https://api.test.org")
+def address():
+    return "127.0.0.1"
 
 
 @pytest.fixture
-def valid_capabilities():
-    return AgentCapabilities(
-        streaming=True, pushNotifications=False, stateTransitionHistory=True
-    )
+def port():
+    return 8080
 
 
 @pytest.fixture
-def valid_authentication():
-    return AgentAuthentication(schemes=["basic"], credentials="secret")
-
-
-@pytest.fixture
-def valid_skill():
-    return AgentSkill(
-        id="skill1", name="Skill One", description="A test skill", tags=["a", "b"]
-    )
+def agent_card_url(address, port):
+    return f"http://{address}:{port}/.well-known/agent.json"
 
 
 # --- HealthStatus enum tests ---
@@ -59,73 +43,59 @@ def test_health_status_invalid():
 
 
 # --- AgentServiceMeta tests ---
-def test_agent_service_meta_success(
-    valid_provider, valid_capabilities, valid_authentication, valid_skill
-):
-    meta = AgentServiceMeta(
-        provider=valid_provider,
-        capabilities=valid_capabilities,
-        authentication=valid_authentication,
-        modalities=["m1", "m2"],
-        version="1.0",
-        description="desc",
-        documentation_url="http://doc",
-        default_input_modes=["in"],
-        default_output_modes=["out"],
-        skills=[valid_skill],
-    )
-    assert meta.provider.organization == "TestOrg"
-    assert isinstance(meta.modalities, list) and meta.modalities == ["m1", "m2"]
-
-
-def test_agent_service_meta_missing_required(valid_provider):
-    # capabilities is required
-    with pytest.raises(ValidationError):
-        AgentServiceMeta(provider=valid_provider)
+def test_agent_service_meta_success(agent_card_url):
+    meta = {"agent_card_url": agent_card_url}
+    assert meta["agent_card_url"].startswith("http://")
 
 
 # --- CheckConfig tests ---
 def test_check_config_success():
     cfg = CheckConfig(
         HTTP="http://health",
-        Interval=DurationValue(value="10s"),
-        Timeout=DurationValue(value="5s"),
+        Interval=DurationValue("10s"),
+        Timeout=DurationValue("5s"),
     )
     assert str(cfg.HTTP).startswith("http")
 
 
 def test_check_config_missing_field():
     with pytest.raises(ValidationError):
-        CheckConfig(HTTP="h", Interval=DurationValue(value="i"))  # Timeout missing
+        CheckConfig(HTTP="h", Interval=DurationValue("i"))  # Timeout missing
 
 
 # --- ConsulServiceDefinition tests ---
-def test_consul_service_definition_success(
-    valid_provider, valid_capabilities, valid_authentication, valid_skill
-):
-    meta = AgentServiceMeta(provider=valid_provider, capabilities=valid_capabilities)
+def test_consul_service_definition_success(address, port, agent_card_url):
+    meta = {"agent_card_url": agent_card_url}
     svc = ConsulServiceDefinition(
         Name="svc",
         ID="svc1",
-        Address=AddressValue(value="127.0.0.1"),
-        Port=PortValue(value=8080),
+        Address=AddressValue(address),
+        Port=PortValue(port),
         Meta=meta,
     )
-    assert svc.Port.value == 8080
+    assert svc.Port.root == port
     assert svc.Tags == []
 
 
-def test_consul_service_definition_port_bounds(valid_provider, valid_capabilities):
-    meta = AgentServiceMeta(provider=valid_provider, capabilities=valid_capabilities)
+def test_consul_service_definition_port_bounds(address, agent_card_url):
+    meta = {"agent_card_url": agent_card_url}
     # too low
     with pytest.raises(ValidationError):
         ConsulServiceDefinition(
-            Name="a", ID="b", Address=AddressValue(value="x"), Port=0, Meta=meta
+            Name="a",
+            ID="b",
+            Address=AddressValue(address),
+            Port=PortValue(0),
+            Meta=meta,
         )
     # too high
     with pytest.raises(ValidationError):
         ConsulServiceDefinition(
-            Name="a", ID="b", Address=AddressValue(value="x"), Port=70000, Meta=meta
+            Name="a",
+            ID="b",
+            Address=AddressValue(address),
+            Port=PortValue(70000),
+            Meta=meta,
         )
 
 
@@ -141,32 +111,32 @@ def test_service_deregistration_missing():
 
 
 # --- ServiceEntry tests ---
-def test_service_entry_success(valid_provider, valid_capabilities):
-    meta = AgentServiceMeta(provider=valid_provider, capabilities=valid_capabilities)
+def test_service_entry_success(address, port, agent_card_url):
+    meta = {"agent_card_url": agent_card_url}
     entry = ServiceEntry(
         ID="e1",
         Service="svc",
-        Address=AddressValue(value="host"),
-        Port=PortValue(value=1234),
+        Address=AddressValue("host"),
+        Port=PortValue(1234),
         Meta=meta,
     )
     assert entry.Service == "svc"
 
 
-def test_service_entry_invalid_port(valid_provider, valid_capabilities):
-    meta = AgentServiceMeta(provider=valid_provider, capabilities=valid_capabilities)
+def test_service_entry_invalid_port(address, agent_card_url):
+    meta = {"agent_card_url": agent_card_url}
     with pytest.raises(ValidationError):
         ServiceEntry(
             ID="e1",
             Service="svc",
-            Address=AddressValue(value="host"),
-            Port=-1,
+            Address=AddressValue("host"),
+            Port=PortValue(-1),
             Meta=meta,
         )
 
 
 # --- HealthCheckResult tests ---
-def test_health_check_result_success(valid_provider, valid_capabilities):
+def test_health_check_result_success():
     result = HealthCheckResult(
         CheckID="c1", Name="chk", Status=HealthStatus.critical, ServiceID="sid"
     )
@@ -179,13 +149,13 @@ def test_health_check_result_invalid_status():
 
 
 # --- HealthServiceEntry tests ---
-def test_health_service_entry_success(valid_provider, valid_capabilities):
-    meta = AgentServiceMeta(provider=valid_provider, capabilities=valid_capabilities)
+def test_health_service_entry_success(agent_card_url):
+    meta = {"agent_card_url": agent_card_url}
     svc = ServiceEntry(
         ID="e2",
         Service="s",
-        Address=AddressValue(value="a"),
-        Port=PortValue(value=1),
+        Address=AddressValue("a"),
+        Port=PortValue(1),
         Meta=meta,
     )
     chk = HealthCheckResult(
@@ -197,13 +167,13 @@ def test_health_service_entry_success(valid_provider, valid_capabilities):
     assert hse.Checks[0].ServiceID == "e2"
 
 
-def test_health_service_entry_empty_checks(valid_provider, valid_capabilities):
-    meta = AgentServiceMeta(provider=valid_provider, capabilities=valid_capabilities)
+def test_health_service_entry_empty_checks(agent_card_url):
+    meta = {"agent_card_url": agent_card_url}
     svc = ServiceEntry(
         ID="e3",
         Service="s",
-        Address=AddressValue(value="a"),
-        Port=PortValue(value=1),
+        Address=AddressValue("a"),
+        Port=PortValue(1),
         Meta=meta,
     )
     # Business logic may allow empty list; assert attribute type
